@@ -1,56 +1,37 @@
 /* AES-128: NIST FIPS 197 Appendix B. AES-256: Appendix C.3. */
 
 #include <stdint.h>
+#include <stdio.h>
 #include "test_utils.h"
 #include "aes.h"
 
 void run_aes_tests(void)
 {
-    uint8_t out[16];
+    FILE          *f = test_open_vectors("test/vectors/aes_ecb.txt");
+    test_vector_t  v;
+    uint8_t        out[16];
 
-    {
-        aes128_ctx_t ctx;
-        static const uint8_t key[16] = {
-            0x2b,0x7e,0x15,0x16, 0x28,0xae,0xd2,0xa6,
-            0xab,0xf7,0x15,0x88, 0x09,0xcf,0x4f,0x3c
-        };
-        static const uint8_t pt[16] = {
-            0x32,0x43,0xf6,0xa8, 0x88,0x5a,0x30,0x8d,
-            0x31,0x31,0x98,0xa2, 0xe0,0x37,0x07,0x34
-        };
-        static const uint8_t ct[16] = {
-            0x39,0x25,0x84,0x1d, 0x02,0xdc,0x09,0xfb,
-            0xdc,0x11,0x85,0x97, 0x19,0x6a,0x0b,0x32
-        };
-
-        aes128_key_expand(key, &ctx);
-        aes128_encrypt(pt, out, &ctx);
-        test_assert_bytes("AES-128 FIPS197 AppB encrypt", ct, out, 16);
-        aes128_decrypt(ct, out, &ctx);
-        test_assert_bytes("AES-128 FIPS197 AppB decrypt", pt, out, 16);
+    while (test_load_vector(f, &v)) {
+        char enc[32], dec[32];
+        if (v.key_len == 16) {
+            aes128_ctx_t ctx;
+            snprintf(enc, sizeof(enc), "AES-128 [%d] encrypt", v.count);
+            snprintf(dec, sizeof(dec), "AES-128 [%d] decrypt", v.count);
+            aes128_key_expand(v.key, &ctx);
+            aes128_encrypt(v.pt, out, &ctx);
+            test_assert_bytes(enc, v.ct, out, 16);
+            aes128_decrypt(v.ct, out, &ctx);
+            test_assert_bytes(dec, v.pt, out, 16);
+        } else if (v.key_len == 32) {
+            aes256_ctx_t ctx;
+            snprintf(enc, sizeof(enc), "AES-256 [%d] encrypt", v.count);
+            snprintf(dec, sizeof(dec), "AES-256 [%d] decrypt", v.count);
+            aes256_key_expand(v.key, &ctx);
+            aes256_encrypt(v.pt, out, &ctx);
+            test_assert_bytes(enc, v.ct, out, 16);
+            aes256_decrypt(v.ct, out, &ctx);
+            test_assert_bytes(dec, v.pt, out, 16);
+        }
     }
-
-    {
-        aes256_ctx_t ctx;
-        static const uint8_t key[32] = {
-            0x00,0x01,0x02,0x03, 0x04,0x05,0x06,0x07,
-            0x08,0x09,0x0a,0x0b, 0x0c,0x0d,0x0e,0x0f,
-            0x10,0x11,0x12,0x13, 0x14,0x15,0x16,0x17,
-            0x18,0x19,0x1a,0x1b, 0x1c,0x1d,0x1e,0x1f
-        };
-        static const uint8_t pt[16] = {
-            0x00,0x11,0x22,0x33, 0x44,0x55,0x66,0x77,
-            0x88,0x99,0xaa,0xbb, 0xcc,0xdd,0xee,0xff
-        };
-        static const uint8_t ct[16] = {
-            0x8e,0xa2,0xb7,0xca, 0x51,0x67,0x45,0xbf,
-            0xea,0xfc,0x49,0x90, 0x4b,0x49,0x60,0x89
-        };
-
-        aes256_key_expand(key, &ctx);
-        aes256_encrypt(pt, out, &ctx);
-        test_assert_bytes("AES-256 FIPS197 AppC3 encrypt", ct, out, 16);
-        aes256_decrypt(ct, out, &ctx);
-        test_assert_bytes("AES-256 FIPS197 AppC3 decrypt", pt, out, 16);
-    }
+    fclose(f);
 }

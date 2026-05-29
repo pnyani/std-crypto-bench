@@ -1,32 +1,26 @@
 /* SEED: RFC 4269 Section 4, Test Vector #1. */
 
 #include <stdint.h>
+#include <stdio.h>
 #include "test_utils.h"
 #include "seed.h"
 
 void run_seed_tests(void)
 {
-    uint8_t out[16];
+    FILE          *f = test_open_vectors("test/vectors/seed_ecb.txt");
+    test_vector_t  v;
+    uint8_t        out[16];
 
-    {
+    while (test_load_vector(f, &v)) {
         seed_ctx_t ctx;
-        static const uint8_t key[16] = {
-            0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00,
-            0x00,0x00,0x00,0x00, 0x00,0x00,0x00,0x00
-        };
-        static const uint8_t pt[16] = {
-            0x00,0x01,0x02,0x03, 0x04,0x05,0x06,0x07,
-            0x08,0x09,0x0a,0x0b, 0x0c,0x0d,0x0e,0x0f
-        };
-        static const uint8_t ct[16] = {
-            0x5e,0xba,0xc6,0xe0, 0x05,0x4e,0x16,0x68,
-            0x19,0xaf,0xf1,0xcc, 0x6d,0x34,0x6c,0xdb
-        };
-
-        seed_key_expand(key, &ctx);
-        seed_encrypt(pt, out, &ctx);
-        test_assert_bytes("SEED RFC4269 TV1 encrypt", ct, out, 16);
-        seed_decrypt(ct, out, &ctx);
-        test_assert_bytes("SEED RFC4269 TV1 decrypt", pt, out, 16);
+        char       enc[32], dec[32];
+        snprintf(enc, sizeof(enc), "SEED [%d] encrypt", v.count);
+        snprintf(dec, sizeof(dec), "SEED [%d] decrypt", v.count);
+        seed_key_expand(v.key, &ctx);
+        seed_encrypt(v.pt, out, &ctx);
+        test_assert_bytes(enc, v.ct, out, 16);
+        seed_decrypt(v.ct, out, &ctx);
+        test_assert_bytes(dec, v.pt, out, 16);
     }
+    fclose(f);
 }

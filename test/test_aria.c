@@ -1,32 +1,26 @@
 /* ARIA-128: RFC 5794 Section 2, Test Vector #1. */
 
 #include <stdint.h>
+#include <stdio.h>
 #include "test_utils.h"
 #include "aria.h"
 
 void run_aria_tests(void)
 {
-    uint8_t out[16];
+    FILE          *f = test_open_vectors("test/vectors/aria_ecb.txt");
+    test_vector_t  v;
+    uint8_t        out[16];
 
-    {
+    while (test_load_vector(f, &v)) {
         aria128_ctx_t ctx;
-        static const uint8_t key[16] = {
-            0x00,0x01,0x02,0x03, 0x04,0x05,0x06,0x07,
-            0x08,0x09,0x0a,0x0b, 0x0c,0x0d,0x0e,0x0f
-        };
-        static const uint8_t pt[16] = {
-            0x00,0x11,0x22,0x33, 0x44,0x55,0x66,0x77,
-            0x88,0x99,0xaa,0xbb, 0xcc,0xdd,0xee,0xff
-        };
-        static const uint8_t ct[16] = {
-            0xd7,0x18,0xfb,0xd6, 0xab,0x64,0x4c,0x73,
-            0x9d,0xa9,0x5f,0x3b, 0xe6,0x45,0x17,0x78
-        };
-
-        aria128_key_expand(key, &ctx);
-        aria128_encrypt(pt, out, &ctx);
-        test_assert_bytes("ARIA-128 RFC5794 TV1 encrypt", ct, out, 16);
-        aria128_decrypt(ct, out, &ctx);
-        test_assert_bytes("ARIA-128 RFC5794 TV1 decrypt", pt, out, 16);
+        char          enc[32], dec[32];
+        snprintf(enc, sizeof(enc), "ARIA-128 [%d] encrypt", v.count);
+        snprintf(dec, sizeof(dec), "ARIA-128 [%d] decrypt", v.count);
+        aria128_key_expand(v.key, &ctx);
+        aria128_encrypt(v.pt, out, &ctx);
+        test_assert_bytes(enc, v.ct, out, 16);
+        aria128_decrypt(v.ct, out, &ctx);
+        test_assert_bytes(dec, v.pt, out, 16);
     }
+    fclose(f);
 }
