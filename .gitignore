@@ -56,3 +56,7 @@ dkms.conf
 
 # callgrind output
 callgrind.out.*
+
+# build directories
+bin/bench
+test_runner
