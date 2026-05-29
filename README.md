@@ -26,7 +26,8 @@
 | ARIA-128  | SPN       | 128        | 128          | 12     | KS X 1213-1    |
 | SEED      | Feistel   | 128        | 128          | 16     | KS X 1213      |
 | DES       | Feistel   | 56         | 64           | 16     | FIPS 46-3      |
-| 3DES      | Feistel   | 112/168    | 64           | 48     | NIST SP 800-67 |
+| 3DES-2KEY | Feistel   | 112        | 64           | 48     | NIST SP 800-67 |
+| 3DES-3KEY | Feistel   | 168        | 64           | 48     | NIST SP 800-67 |
 
 > DES, 3DES는 폐기된 표준. 알고리즘 구조 비교 목적으로만 포함.
 
@@ -37,7 +38,7 @@
 ```
 Metric  : IPB = Ir / plaintext bytes
 Tool    : Valgrind callgrind
-Compiler: GCC, flags: -O2 -mno-aes -march=x86-64 -std=c11
+Compiler: GCC, flags: -O2 -mno-aes -march=x86-64 -std=c99
 Mode    : ECB
 Input   : 1 MB, 10 MB
 Warmup  : 3 iterations
@@ -117,6 +118,8 @@ StdCryptoBench/
 make
 ```
 
+- 벤치마크 워커 바이너리: `bin/bench`
+
 테스트:
 
 ```bash
@@ -131,7 +134,9 @@ make test
 ./scripts/bench.sh
 ```
 
-- callgrind 출력: 프로젝트 루트에 `callgrind.out.*`로 저장
+- 의도된 벤치마크 진입점은 `scripts/bench.sh`
+- `bin/bench`는 최소한의 인자 검증만 수행함 `scripts/bench.sh`가 유효한 인자를 전달한다고 가정
+- callgrind 출력: 프로젝트 루트에 `callgrind_${algo}_${size}MB_${dir}.out`로 저장
 - IPB 계산 결과: 표준 출력
 
 
