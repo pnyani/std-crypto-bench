@@ -19,8 +19,9 @@
 - 서로 다른 설계 구조 포함 (SPN / Feistel)
 - 공개된 사양 문서 존재
 
+
 | Algorithm | Structure | Key (bits) | Block (bits) | Rounds | Standard       |
-|--|--||--|--|-|
+|--|--|--|--|--|-|
 | AES-128   | SPN       | 128        | 128          | 10     | NIST FIPS 197  |
 | AES-256   | SPN       | 256        | 128          | 14     | NIST FIPS 197  |
 | ARIA-128  | SPN       | 128        | 128          | 12     | KS X 1213-1    |
@@ -93,7 +94,7 @@ StdCryptoBench/
 ```
 
 | 디렉토리          | 역할 |
-|-||
+|--|--|
 | `include/`        | 알고리즘 공개 API 헤더. `bench/`, `test/`는 이곳만 참조. |
 | `src/`            | 알고리즘 구현. `aes_internal.h`는 `aes.c`, `aes_variant.c` 전용 내부 헤더. |
 | `bench/`          | callgrind 기반 벤치마크 하네스. 측정 구간 한정, 워밍업, IPB 계산 담당. |
