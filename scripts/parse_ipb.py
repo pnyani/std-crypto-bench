@@ -18,10 +18,10 @@ import re
 def parse_ir(filepath: str) -> int:
     with open(filepath, "r") as f:
         for line in f:
-            m = re.match(r"^summary:\s+(\d+)", line)
+            m = re.match(r"^totals:\s+(\d+)", line)
             if m:
                 return int(m.group(1))
-    raise ValueError(f"'summary:' line not found in {filepath!r}")
+    raise ValueError(f"'totals:' line not found in {filepath!r}")
 
 
 def main() -> int:
