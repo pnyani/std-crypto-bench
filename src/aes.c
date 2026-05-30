@@ -66,20 +66,41 @@ uint32_t aes_rot_word(uint32_t w)
     return (w << 8) | (w >> 24);
 }
 
+/* branchless; used only to build the tables below */
 static uint8_t xtime(uint8_t x)
 {
-    return (uint8_t)((x << 1) ^ ((x & 0x80) ? 0x1b : 0x00));
+    return (uint8_t)((x << 1) ^ (uint8_t)(-(x >> 7) & 0x1b));
 }
 
-static uint8_t mul(uint8_t a, uint8_t b)
+static uint8_t gf_mul(uint8_t a, uint8_t b)
 {
     uint8_t r = 0;
-    while (b != 0) {
-        if (b & 1) r ^= a;
+    int i;
+    for (i = 0; i < 8; i++) {
+        r ^= (uint8_t)(-(b & 1) & a);
         a = xtime(a);
         b >>= 1;
     }
     return r;
+}
+
+/* precomputed products; lookups keep the instruction count fixed per byte */
+static uint8_t gf2[256], gf3[256], gf9[256], gf11[256], gf13[256], gf14[256];
+static int     gf_ready = 0;
+
+static void gf_init_tables(void)
+{
+    int i;
+    if (gf_ready) return;
+    for (i = 0; i < 256; i++) {
+        gf2[i]  = gf_mul((uint8_t)i, 2);
+        gf3[i]  = gf_mul((uint8_t)i, 3);
+        gf9[i]  = gf_mul((uint8_t)i, 9);
+        gf11[i] = gf_mul((uint8_t)i, 11);
+        gf13[i] = gf_mul((uint8_t)i, 13);
+        gf14[i] = gf_mul((uint8_t)i, 14);
+    }
+    gf_ready = 1;
 }
 
 static void add_round_key(uint8_t s[16], const uint32_t *rk)
@@ -128,10 +149,10 @@ static void mix_columns(uint8_t s[16])
     for (c = 0; c < 4; c++) {
         uint8_t *p = &s[4*c];
         uint8_t a0 = p[0], a1 = p[1], a2 = p[2], a3 = p[3];
-        p[0] = (uint8_t)(mul(a0,2) ^ mul(a1,3) ^ a2 ^ a3);
-        p[1] = (uint8_t)(a0 ^ mul(a1,2) ^ mul(a2,3) ^ a3);
-        p[2] = (uint8_t)(a0 ^ a1 ^ mul(a2,2) ^ mul(a3,3));
-        p[3] = (uint8_t)(mul(a0,3) ^ a1 ^ a2 ^ mul(a3,2));
+        p[0] = (uint8_t)(gf2[a0] ^ gf3[a1] ^ a2 ^ a3);
+        p[1] = (uint8_t)(a0 ^ gf2[a1] ^ gf3[a2] ^ a3);
+        p[2] = (uint8_t)(a0 ^ a1 ^ gf2[a2] ^ gf3[a3]);
+        p[3] = (uint8_t)(gf3[a0] ^ a1 ^ a2 ^ gf2[a3]);
     }
 }
 
@@ -141,16 +162,17 @@ static void inv_mix_columns(uint8_t s[16])
     for (c = 0; c < 4; c++) {
         uint8_t *p = &s[4*c];
         uint8_t a0 = p[0], a1 = p[1], a2 = p[2], a3 = p[3];
-        p[0] = (uint8_t)(mul(a0,14) ^ mul(a1,11) ^ mul(a2,13) ^ mul(a3,9));
-        p[1] = (uint8_t)(mul(a0,9) ^ mul(a1,14) ^ mul(a2,11) ^ mul(a3,13));
-        p[2] = (uint8_t)(mul(a0,13) ^ mul(a1,9) ^ mul(a2,14) ^ mul(a3,11));
-        p[3] = (uint8_t)(mul(a0,11) ^ mul(a1,13) ^ mul(a2,9) ^ mul(a3,14));
+        p[0] = (uint8_t)(gf14[a0] ^ gf11[a1] ^ gf13[a2] ^ gf9[a3]);
+        p[1] = (uint8_t)(gf9[a0] ^ gf14[a1] ^ gf11[a2] ^ gf13[a3]);
+        p[2] = (uint8_t)(gf13[a0] ^ gf9[a1] ^ gf14[a2] ^ gf11[a3]);
+        p[3] = (uint8_t)(gf11[a0] ^ gf13[a1] ^ gf9[a2] ^ gf14[a3]);
     }
 }
 
 void aes_key_expand_generic(const uint8_t *key, uint32_t *w, int Nk, int Nr)
 {
     int i;
+    gf_init_tables();
     for (i = 0; i < Nk; i++) w[i] = aes_load_be32(key + 4*i);
     for (i = Nk; i < 4 * (Nr + 1); i++) {
         uint32_t temp = w[i - 1];
