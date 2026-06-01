@@ -38,8 +38,11 @@
 
 ```
 Metric  : IPB = Ir / plaintext bytes
-Tool    : Valgrind callgrind
+Tool    : Valgrind callgrind, flags: --cache-sim=no --branch-sim=no
 Compiler: GCC, flags: -O2 -mno-aes -march=x86-64 -std=c99
+                      -fno-inline -fno-ipa-cp -fno-ipa-sra
+                      -fno-optimize-sibling-calls
+Link    : -static
 Mode    : ECB
 Input   : 1 MB, 10 MB
 Warmup  : 3 iterations
@@ -119,7 +122,7 @@ StdCryptoBench/
 make
 ```
 
-- 벤치마크 워커 바이너리: `bin/bench`
+- 벤치마크 워커 바이너리: `bin/bench` (정적 링크)
 
 테스트:
 

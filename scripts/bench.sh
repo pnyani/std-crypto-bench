@@ -27,6 +27,8 @@ for size in $SIZES; do
 
             valgrind \
                 --tool=callgrind \
+                --cache-sim=no   \
+                --branch-sim=no  \
                 --callgrind-out-file="$outfile" \
                 --instr-atstart=no \
                 --quiet \
