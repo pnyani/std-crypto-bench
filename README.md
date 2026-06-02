@@ -42,6 +42,8 @@ Tool    : Valgrind callgrind, flags: --cache-sim=no --branch-sim=no
 Compiler: GCC, flags: -O2 -mno-aes -march=x86-64 -std=c99
                       -fno-inline -fno-ipa-cp -fno-ipa-sra
                       -fno-optimize-sibling-calls
+                      -fno-tree-loop-vectorize -fno-tree-slp-vectorize
+                      -fno-ivopts
 Link    : -static
 Mode    : ECB
 Input   : 1 MB, 10 MB

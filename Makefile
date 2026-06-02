@@ -8,6 +8,9 @@ CFLAGS   := -std=c99 -O2 -mno-aes -march=x86-64 \
             -fno-inline -fno-ipa-cp               \
             -fno-ipa-sra                          \
             -fno-optimize-sibling-calls           \
+            -fno-tree-loop-vectorize              \
+            -fno-tree-slp-vectorize               \
+            -fno-ivopts                           \
             -Wall -Wextra
 
 LDFLAGS  := -static
