@@ -9,7 +9,6 @@ OUT_DIR="${OUT_DIR:-.}"
 ALGOS="AES-128 AES-256 ARIA-128 SEED DES 3DES-2KEY 3DES-3KEY"
 SIZES="1 10"
 DIRS="enc dec"
-REPEAT=10
 
 if [ ! -x "$BENCH" ]; then
     echo "error: '$BENCH' not found. run 'make' first." >&2
@@ -25,16 +24,17 @@ for size in $SIZES; do
         for dir in $DIRS; do
             outfile="${OUT_DIR}/callgrind_${algo}_${size}MB_${dir}.out"
 
-            valgrind \
+            meta=$(valgrind \
                 --tool=callgrind \
                 --cache-sim=no   \
                 --branch-sim=no  \
                 --callgrind-out-file="$outfile" \
                 --instr-atstart=no \
                 --quiet \
-                "$BENCH" "$algo" "$size" "$dir"
+                "$BENCH" "$algo" "$size" "$dir")
+            repeat=$(echo "$meta" | grep -o 'repeat=[0-9]*' | cut -d= -f2)
 
-            python3 "$PARSE" "$outfile" "$algo" "$data_bytes" "$dir" "$REPEAT"
+            python3 "$PARSE" "$outfile" "$algo" "$data_bytes" "$dir" "$repeat"
         done
     done
 done
