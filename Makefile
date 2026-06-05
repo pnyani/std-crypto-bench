@@ -44,8 +44,8 @@ all: bin/bench
 bin:
 	mkdir -p bin
 
-bin/bench: $(BENCH_SRCS) | bin
-	$(CC) $(CFLAGS) $(INCLUDES) $(LDFLAGS) -o $@ $^
+bin/bench: $(BENCH_SRCS) Makefile | bin
+	$(CC) $(CFLAGS) $(INCLUDES) $(LDFLAGS) -o $@ $(BENCH_SRCS)
 
 valgrind: bin/bench
 	valgrind \
@@ -59,8 +59,8 @@ valgrind: bin/bench
 test: test_runner
 	./test_runner
 
-test_runner: $(TEST_SRCS)
-	$(CC) $(CFLAGS) $(INCLUDES) -Itest $(LDFLAGS) -o $@ $^
+test_runner: $(TEST_SRCS) Makefile
+	$(CC) $(CFLAGS) $(INCLUDES) -Itest $(LDFLAGS) -o $@ $(TEST_SRCS)
 
 clean:
 	rm -f bin/bench test_runner callgrind.out.* callgrind_*.out
