@@ -15,8 +15,11 @@ if [ ! -x "$BENCH" ]; then
     exit 1
 fi
 
-printf "%-12s  %12s  %4s  %20s  %10s\n" "Algorithm" "Bytes" "Dir" "Ir" "IPB"
-printf '%s\n' "--------------------------------------------------------------------"
+printf "GCC     : %s\n" "$(gcc --version | head -1)"
+printf "Valgrind: %s\n" "$(valgrind --version)"
+printf "\n"
+printf "%-12s  %12s  %3s  %19s  %12s\n" "Algorithm" "Bytes" "Dir" "Ir" "IPB"
+printf '%s\n' "------------------------------------------------------------------"
 
 for size in $SIZES; do
     data_bytes=$(( size * 1024 * 1024 ))
