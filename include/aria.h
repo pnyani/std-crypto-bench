@@ -12,6 +12,7 @@
 
 typedef struct {
     uint8_t rk[13][16];
+    uint8_t dk[13][16];
 } aria128_ctx_t;
 
 void aria128_key_expand(const uint8_t key[16], aria128_ctx_t *ctx);

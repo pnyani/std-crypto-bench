@@ -151,7 +151,7 @@ static void rot_xor(uint8_t out[16], const uint8_t a[16], const uint8_t b[16], i
 void aria128_key_expand(const uint8_t key[16], aria128_ctx_t *ctx)
 {
     uint8_t w[4][16], t[16];
-    int i;
+    int i, j;
     for (i = 0; i < 16; i++) w[0][i] = key[i];
     round_func(t, w[0], C[0], 1);
     for (i = 0; i < 16; i++) w[1][i] = t[i];
@@ -173,6 +173,13 @@ void aria128_key_expand(const uint8_t key[16], aria128_ctx_t *ctx)
     rot_xor(ctx->rk[10], w[2], w[3], 61);
     rot_xor(ctx->rk[11], w[3], w[0], 61);
     rot_xor(ctx->rk[12], w[0], w[1], 31);
+
+    for (j = 0; j < 16; j++) ctx->dk[0][j] = ctx->rk[12][j];
+    for (i = 1; i < 12; i++) {
+        for (j = 0; j < 16; j++) ctx->dk[i][j] = ctx->rk[12 - i][j];
+        diffuse(ctx->dk[i]);
+    }
+    for (j = 0; j < 16; j++) ctx->dk[12][j] = ctx->rk[0][j];
 }
 
 static void aria_crypt(const uint8_t in[16], uint8_t out[16], uint8_t rk[13][16])
@@ -193,15 +200,7 @@ void aria128_encrypt(const uint8_t in[16], uint8_t out[16], const aria128_ctx_t 
 
 void aria128_decrypt(const uint8_t in[16], uint8_t out[16], const aria128_ctx_t *ctx)
 {
-    uint8_t dk[13][16];
-    int i, j;
-    for (j = 0; j < 16; j++) dk[0][j] = ctx->rk[12][j];
-    for (i = 1; i < 12; i++) {
-        for (j = 0; j < 16; j++) dk[i][j] = ctx->rk[12 - i][j];
-        diffuse(dk[i]);
-    }
-    for (j = 0; j < 16; j++) dk[12][j] = ctx->rk[0][j];
-    aria_crypt(in, out, dk);
+    aria_crypt(in, out, (uint8_t (*)[16])ctx->dk);
 }
 
 void aria128_encrypt_blocks(const uint8_t *in, uint8_t *out, size_t blocks, const aria128_ctx_t *ctx)
