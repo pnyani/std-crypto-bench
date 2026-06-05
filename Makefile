@@ -2,8 +2,7 @@
 CC     := gcc
 PYTHON := python3
 
-# -mno-aes: disable AES-NI so all algorithms are compared as software only
-# -fno-inline -fno-ipa-cp -fno-ipa-sra -fno-optimize-sibling-calls: reproducible Ir across GCC versions
+# Flags
 CFLAGS   := -std=c99 -O2 -mno-aes -march=x86-64 \
             -fno-inline -fno-ipa-cp               \
             -fno-ipa-sra                          \
@@ -11,6 +10,7 @@ CFLAGS   := -std=c99 -O2 -mno-aes -march=x86-64 \
             -fno-tree-loop-vectorize              \
             -fno-tree-slp-vectorize               \
             -fno-ivopts                           \
+            -fno-unroll-loops                     \
             -Wall -Wextra
 
 LDFLAGS  := -static

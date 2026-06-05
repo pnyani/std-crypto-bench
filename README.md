@@ -43,7 +43,7 @@ Compiler: GCC, flags: -O2 -mno-aes -march=x86-64 -std=c99
                       -fno-inline -fno-ipa-cp -fno-ipa-sra
                       -fno-optimize-sibling-calls
                       -fno-tree-loop-vectorize -fno-tree-slp-vectorize
-                      -fno-ivopts
+                      -fno-ivopts -fno-unroll-loops
 Link    : -static
 Mode    : ECB
 Input   : 1 MB, 10 MB
@@ -53,6 +53,9 @@ OS      : Linux
 ```
 
 - `-mno-aes`: x86 AES-NI 비활성화. AES와 나머지 알고리즘 간 하드웨어 가속 차이를 배제하고 소프트웨어 구현만 비교
+- `-fno-tree-loop-vectorize` `-fno-tree-slp-vectorize`: SIMD 자동 벡터화 비활성화. 알고리즘 간 명령어 구성이 달라져 Ir 비교를 왜곡
+- `-fno-ivopts`: 귀납 변수 최적화 비활성화. 루프 카운터 강도 감소 변환으로 Ir이 달라짐
+- `-fno-unroll-loops`: 루프 언롤링 비활성화. GCC 버전에 따라 소형 루프(반복 횟수 <= 16) 언롤 여부가 달라져 Ir이 변동되는 문제를 억제
 - 벤치마크 포함 기준: NIST CAVP 또는 KISA 공식 테스트 벡터 통과 구현에 한함
 
 
