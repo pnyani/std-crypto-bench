@@ -23,6 +23,7 @@
 | Algorithm | Structure | Key (bits) | Block (bits) | Rounds | Standard       |
 |--|--|--|--|--|-|
 | AES-128   | SPN       | 128        | 128          | 10     | NIST FIPS 197  |
+| AES-192   | SPN       | 192        | 128          | 12     | NIST FIPS 197  |
 | AES-256   | SPN       | 256        | 128          | 14     | NIST FIPS 197  |
 | ARIA-128  | SPN       | 128        | 128          | 12     | KS X 1213-1    |
 | SEED      | Feistel   | 128        | 128          | 16     | KS X 1213      |
@@ -31,6 +32,34 @@
 | 3DES-3KEY | Feistel   | 168        | 64           | 48     | NIST SP 800-67 |
 
 > DES, 3DES는 폐기된 표준. 알고리즘 구조 비교 목적으로만 포함.
+
+
+
+## AES 변종 시나리오
+
+AES 변종은 연구 문제 2를 위해 별도 실행한다. 성능 지표와 측정 조건은 표준 알고리즘 벤치마크와 동일하게 IPB를 사용한다.
+
+### Scenario A: 라운드 수 변경
+
+키 길이를 AES-128과 동일한 128 bit로 고정하고 라운드 수만 변경한다. 기준 알고리즘은 `AES-128`이다.
+
+| Algorithm   | Key (bits) | Block (bits) | Rounds | Note             |
+|--|--:|--:|--:|--|
+| AES-128-R8  | 128        | 128          | 8      | Reduced rounds   |
+| AES-128     | 128        | 128          | 10     | Baseline         |
+| AES-128-R12 | 128        | 128          | 12     | Increased rounds |
+
+`AES-128-R8`, `AES-128-R12`는 표준 AES가 아니므로 공식 ciphertext 테스트 벡터는 없다. 구현 검증은 암호화 후 복호화 round-trip으로 수행한다.
+
+### Scenario B: 키 길이와 표준 라운드 수 변경
+
+NIST FIPS 197의 표준 AES 키 길이와 라운드 수를 사용한다. 기준 알고리즘은 `AES-128`이다.
+
+| Algorithm | Key (bits) | Block (bits) | Rounds | Note     |
+|--|--:|--:|--:|--|
+| AES-128   | 128        | 128          | 10     | Baseline |
+| AES-192   | 192        | 128          | 12     | Standard |
+| AES-256   | 256        | 128          | 14     | Standard |
 
 
 
@@ -97,6 +126,8 @@ StdCryptoBench/
 │       └── des_ecb.txt
 ├── scripts/
 │   ├── bench.sh
+│   ├── bench_aes_rounds.sh
+│   ├── bench_aes_keys.sh
 │   └── parse_ipb.py
 └── Makefile
 ```
@@ -108,7 +139,7 @@ StdCryptoBench/
 | `bench/`          | callgrind 기반 벤치마크 하네스. 측정 구간 한정, 워밍업, IPB 계산 담당. |
 | `test/`           | NIST CAVP 및 KISA 테스트 벡터 기반 구현 정확성 검증. |
 | `test/vectors/`   | 테스트 벡터 데이터 파일. |
-| `scripts/`        | `bench.sh`: 실행 진입점. `parse_ipb.py`: callgrind 출력 파싱 및 IPB 계산. |
+| `scripts/`        | 표준 알고리즘 및 AES 변종 벤치마크 실행 스크립트. `parse_ipb.py`: callgrind 출력 파싱 및 IPB 계산. |
 
 
 
@@ -141,9 +172,13 @@ make test
 
 ```bash
 ./scripts/bench.sh
+./scripts/bench_aes_rounds.sh
+./scripts/bench_aes_keys.sh
 ```
 
-- 의도된 벤치마크 진입점은 `scripts/bench.sh`
+- 표준 알고리즘 벤치마크 진입점은 `scripts/bench.sh`
+- AES 라운드 수 변종은 `./scripts/bench_aes_rounds.sh`로 별도 실행
+- AES 키 길이 변종은 `./scripts/bench_aes_keys.sh`로 별도 실행
 - `bin/bench`는 최소한의 인자 검증만 수행함 `scripts/bench.sh`가 유효한 인자를 전달한다고 가정
 - callgrind 출력: 프로젝트 루트에 `callgrind_${algo}_${size}MB_${dir}.out`로 저장
 - IPB 계산 결과: 표준 출력

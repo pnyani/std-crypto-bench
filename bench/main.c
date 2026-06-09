@@ -24,6 +24,27 @@ static void w_aes256_enc(const uint8_t *i, uint8_t *o, size_t b, const void *c)
 static void w_aes256_dec(const uint8_t *i, uint8_t *o, size_t b, const void *c)
     { aes256_decrypt_blocks(i, o, b, (const aes256_ctx_t *)c); }
 
+typedef struct {
+    uint32_t rk[AES_VARIANT_MAX_RK_WORDS];
+    const aes_params_t *params;
+} aes_variant_ctx_t;
+
+static void w_aes_variant_setup(const uint8_t *k, void *c)
+{
+    aes_variant_ctx_t *ctx = (aes_variant_ctx_t *)c;
+    aes_variant_key_expand(k, ctx->rk, ctx->params);
+}
+static void w_aes_variant_enc(const uint8_t *i, uint8_t *o, size_t b, const void *c)
+{
+    const aes_variant_ctx_t *ctx = (const aes_variant_ctx_t *)c;
+    aes_variant_encrypt_blocks(i, o, b, ctx->rk, ctx->params);
+}
+static void w_aes_variant_dec(const uint8_t *i, uint8_t *o, size_t b, const void *c)
+{
+    const aes_variant_ctx_t *ctx = (const aes_variant_ctx_t *)c;
+    aes_variant_decrypt_blocks(i, o, b, ctx->rk, ctx->params);
+}
+
 static void w_aria128_setup(const uint8_t *k, void *c)
     { aria128_key_expand(k, (aria128_ctx_t *)c); }
 static void w_aria128_enc(const uint8_t *i, uint8_t *o, size_t b, const void *c)
@@ -61,6 +82,9 @@ static void w_tdes3_dec(const uint8_t *i, uint8_t *o, size_t b, const void *c)
 
 static aes128_ctx_t  ctx_aes128;
 static aes256_ctx_t  ctx_aes256;
+static aes_variant_ctx_t ctx_aes128_r8  = { { 0 }, &AES_PARAMS_128_R8 };
+static aes_variant_ctx_t ctx_aes128_r12 = { { 0 }, &AES_PARAMS_128_R12 };
+static aes_variant_ctx_t ctx_aes192     = { { 0 }, &AES_PARAMS_192 };
 static aria128_ctx_t ctx_aria128;
 static seed_ctx_t    ctx_seed;
 static des_ctx_t     ctx_des;
@@ -77,6 +101,11 @@ static const uint8_t KEY_AES256[32] = {
     0x2b,0x73,0xae,0xf0, 0x85,0x7d,0x77,0x81,
     0x1f,0x35,0x2c,0x07, 0x3b,0x61,0x08,0xd7,
     0x2d,0x98,0x10,0xa3, 0x09,0x14,0xdf,0xf4
+};
+static const uint8_t KEY_AES192[24] = {
+    0x00,0x01,0x02,0x03, 0x04,0x05,0x06,0x07,
+    0x08,0x09,0x0a,0x0b, 0x0c,0x0d,0x0e,0x0f,
+    0x10,0x11,0x12,0x13, 0x14,0x15,0x16,0x17
 };
 static const uint8_t KEY_ARIA128[16] = {
     0x00,0x01,0x02,0x03, 0x04,0x05,0x06,0x07,
@@ -100,8 +129,11 @@ static const uint8_t KEY_TDES3[24] = {
 };
 
 static bench_algo_t algos[] = {
-    { "AES-128",  16, 16, w_aes128_setup,  w_aes128_enc,  w_aes128_dec,  &ctx_aes128,  KEY_AES128  },
-    { "AES-256",  32, 16, w_aes256_setup,  w_aes256_enc,  w_aes256_dec,  &ctx_aes256,  KEY_AES256  },
+    { "AES-128",     16, 16, w_aes128_setup,      w_aes128_enc,      w_aes128_dec,      &ctx_aes128,     KEY_AES128  },
+    { "AES-128-R8",  16, 16, w_aes_variant_setup, w_aes_variant_enc, w_aes_variant_dec, &ctx_aes128_r8,  KEY_AES128  },
+    { "AES-128-R12", 16, 16, w_aes_variant_setup, w_aes_variant_enc, w_aes_variant_dec, &ctx_aes128_r12, KEY_AES128  },
+    { "AES-192",     24, 16, w_aes_variant_setup, w_aes_variant_enc, w_aes_variant_dec, &ctx_aes192,     KEY_AES192  },
+    { "AES-256",     32, 16, w_aes256_setup,      w_aes256_enc,      w_aes256_dec,      &ctx_aes256,     KEY_AES256  },
     { "ARIA-128", 16, 16, w_aria128_setup, w_aria128_enc, w_aria128_dec, &ctx_aria128, KEY_ARIA128 },
     { "SEED",     16, 16, w_seed_setup,    w_seed_enc,    w_seed_dec,    &ctx_seed,    KEY_SEED    },
     { "DES",       8,  8, w_des_setup,     w_des_enc,     w_des_dec,     &ctx_des,     KEY_DES     },
@@ -123,7 +155,8 @@ int main(int argc, char *argv[])
     if (argc != 4) {
         fprintf(stderr,
                 "Usage: %s <algo> <data_mb> <enc|dec>\n"
-                "  algo   : AES-128 AES-256 ARIA-128 SEED DES 3DES-2KEY 3DES-3KEY\n"
+                "  algo   : AES-128 AES-128-R8 AES-128-R12 AES-192 AES-256\n"
+                "           ARIA-128 SEED DES 3DES-2KEY 3DES-3KEY\n"
                 "  data_mb: 1 or 10\n",
                 argv[0]);
         return 1;
